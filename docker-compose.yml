@@ -64,6 +64,8 @@ services:
     container_name: discovery-service
     ports:
       - "8761:8761"
+    environment:
+      EUREKA_HOSTNAME: discovery-service
     healthcheck:
       test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/8761' || exit 1"]
       interval: 5s

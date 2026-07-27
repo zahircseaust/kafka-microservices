@@ -125,9 +125,13 @@ harder to trace an end-to-end flow later — that's what `kafka-ui` (below) is f
 
 ```
 kafka-microservices-demo/
-├── docker-compose.yml
+├── docker-compose.yml           # Full stack (all services + infrastructure)
+├── docker-compose-infra.yml     # Infrastructure only (Kafka, Postgres, Zookeeper)
 ├── postgres-init/
 │   └── init-databases.sh        # creates orderdb, inventorydb, notificationdb, authdb
+├── scripts/
+│   ├── setup-local-db.bat       # Windows: create databases locally
+│   └── setup-local-db.sh        # Linux/Mac: create databases locally
 ├── discovery-service/
 │   ├── Dockerfile
 │   ├── pom.xml
@@ -154,14 +158,42 @@ kafka-microservices-demo/
     └── src/main/java/com/example/notificationservice/...
 ```
 
+## 4.1 Ports Reference
+
+| Component             | Port | Description                                      |
+|-----------------------|------|--------------------------------------------------|
+| **Infrastructure**    |      |                                                  |
+| PostgreSQL            | 5432 | Database server                                  |
+| Zookeeper             | 2181 | Kafka coordination                               |
+| Kafka                 | 9092 | Message broker (localhost access)                |
+| Kafka (internal)      | 29092| Message broker (Docker internal)                 |
+| Kafka UI              | 8090 | Web UI for Kafka monitoring                      |
+| **Microservices**     |      |                                                  |
+| Discovery Service     | 8761 | Eureka registry dashboard                        |
+| API Gateway           | 8080 | Main entry point for all API requests            |
+| Auth Service          | 8084 | Authentication & JWT issuance                    |
+| Order Service         | 8081 | Order management                                 |
+| Inventory Service     | 8082 | Stock management                                 |
+| Notification Service  | 8083 | Event notifications                              |
+
 ## 5. Prerequisites
 
+### Option A: Run with Docker (recommended)
 - Docker & Docker Compose (that's it — you do NOT need Java or Maven installed locally; the Dockerfiles
   build each service inside a Maven container)
 - Ports free on your machine: `5432`, `9092`, `8080`, `8081`, `8082`, `8083`, `8084`, `8090`, `8761`
 - (Optional) `jq` installed locally makes the curl examples below nicer, but isn't required.
 
+### Option B: Run without Docker (local development)
+- **Java 17** (JDK, not just JRE)
+- **Maven 3.9+**
+- **PostgreSQL 14+** running locally on port 5432
+- **Apache Kafka 3.x+** running locally on port 9092 (with Zookeeper on 2181)
+- OR use `docker-compose-infra.yml` for infrastructure only (see below)
+
 ## 6. Run it
+
+### Option A: Full Docker (all services containerized)
 
 From the `kafka-microservices-demo` folder:
 
@@ -183,6 +215,124 @@ Open **http://localhost:8090** to see Kafka UI — you can watch messages flow t
 > Want to change the JWT signing secret? Set a `JWT_SECRET` environment variable before running
 > `docker compose up` (it defaults to a long placeholder string otherwise) — it's read by both
 > auth-service and order-service via the same env var, so you only need to set it once.
+
+### Option B: Run without Docker (local development)
+
+This option is useful when you want to debug/develop services in your IDE with hot-reload.
+
+#### Step 1: Start infrastructure (Kafka, PostgreSQL, Zookeeper)
+
+**Option B1: Use Docker for infrastructure only**
+```bash
+docker compose -f docker-compose-infra.yml up
+```
+This starts only Kafka, Zookeeper, PostgreSQL, and Kafka UI — not the microservices.
+
+**Option B2: Install infrastructure locally**
+- Install and start PostgreSQL on port 5432
+- Install and start Kafka on port 9092 (with Zookeeper on 2181)
+- Create databases using the setup script:
+  ```bash
+  # Windows
+  scripts\setup-local-db.bat
+
+  # Linux/Mac
+  chmod +x scripts/setup-local-db.sh
+  ./scripts/setup-local-db.sh
+  ```
+
+#### Step 2: Start services in order
+
+Services must be started in this order due to dependencies:
+
+```bash
+# Terminal 1: Discovery Service (must start first)
+cd discovery-service
+mvn spring-boot:run
+
+# Terminal 2: Auth Service (wait for Eureka to be ready at http://localhost:8761)
+cd auth-service
+mvn spring-boot:run
+
+# Terminal 3: Order Service
+cd order-service
+mvn spring-boot:run
+
+# Terminal 4: Inventory Service
+cd inventory-service
+mvn spring-boot:run
+
+# Terminal 5: Notification Service
+cd notification-service
+mvn spring-boot:run
+
+# Terminal 6: API Gateway (start last)
+cd api-gateway
+mvn spring-boot:run
+```
+
+Or build JARs first and run them:
+```bash
+# Build all services
+mvn clean package -DskipTests -f discovery-service/pom.xml
+mvn clean package -DskipTests -f auth-service/pom.xml
+mvn clean package -DskipTests -f order-service/pom.xml
+mvn clean package -DskipTests -f inventory-service/pom.xml
+mvn clean package -DskipTests -f notification-service/pom.xml
+mvn clean package -DskipTests -f api-gateway/pom.xml
+
+# Run each (in separate terminals, in order)
+java -jar discovery-service/target/discovery-service.jar
+java -jar auth-service/target/auth-service.jar
+java -jar order-service/target/order-service.jar
+java -jar inventory-service/target/inventory-service.jar
+java -jar notification-service/target/notification-service.jar
+java -jar api-gateway/target/api-gateway.jar
+```
+
+#### Environment variables for local development
+
+All services use sensible defaults for local development (localhost). Override if needed:
+
+**Linux/Mac (bash):**
+```bash
+# Database (defaults to localhost:5432, postgres/postgres)
+export DB_HOST=localhost
+export DB_PORT=5432
+export DB_USER=postgres
+export DB_PASSWORD=postgres
+
+# Kafka (defaults to localhost:9092)
+export KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+
+# Eureka (defaults to http://localhost:8761/eureka)
+export EUREKA_URL=http://localhost:8761/eureka
+
+# JWT Secret (must be same for auth-service and order-service)
+export JWT_SECRET=your-secret-key-at-least-32-bytes-long
+```
+
+**Windows (Command Prompt):**
+```cmd
+set DB_HOST=localhost
+set DB_PORT=5432
+set DB_USER=postgres
+set DB_PASSWORD=postgres
+set KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+set EUREKA_URL=http://localhost:8761/eureka
+set JWT_SECRET=your-secret-key-at-least-32-bytes-long
+```
+
+**Windows (PowerShell):**
+```powershell
+$env:DB_HOST="localhost"
+$env:DB_PORT="5432"
+$env:DB_USER="postgres"
+$env:DB_PASSWORD="postgres"
+$env:KAFKA_BOOTSTRAP_SERVERS="localhost:9092"
+$env:EUREKA_URL="http://localhost:8761/eureka"
+$env:JWT_SECRET="your-secret-key-at-least-32-bytes-long"
+```
 
 From here on, **all requests go through api-gateway on port 8080** — that's the point of adding it. The
 individual services' ports (8081-8084) are still published too, so you can bypass the gateway to debug a
@@ -275,6 +425,7 @@ Then log in again (`POST /api/auth/login`) to get a fresh token with the new rol
 
 ## 8. Useful commands
 
+### Docker commands
 ```bash
 # Tail logs for one service
 docker compose logs -f inventory-service
@@ -290,6 +441,32 @@ docker compose up --build order-service
 
 # Scale a service to see client-side load balancing across replicas
 docker compose up --build --scale inventory-service=3
+
+# Start infrastructure only (for local development)
+docker compose -f docker-compose-infra.yml up
+
+# Stop infrastructure only
+docker compose -f docker-compose-infra.yml down
+```
+
+### Local development commands (without Docker for services)
+```bash
+# Build all services
+mvn clean package -DskipTests -f discovery-service/pom.xml && \
+mvn clean package -DskipTests -f auth-service/pom.xml && \
+mvn clean package -DskipTests -f order-service/pom.xml && \
+mvn clean package -DskipTests -f inventory-service/pom.xml && \
+mvn clean package -DskipTests -f notification-service/pom.xml && \
+mvn clean package -DskipTests -f api-gateway/pom.xml
+
+# Run with hot-reload (development mode)
+cd discovery-service && mvn spring-boot:run
+
+# Run from JAR (production-like)
+java -jar discovery-service/target/discovery-service.jar
+
+# Run with custom environment variables
+DB_HOST=mydbserver KAFKA_BOOTSTRAP_SERVERS=mykafka:9092 java -jar auth-service/target/auth-service.jar
 ```
 
 ## 9. Common issues

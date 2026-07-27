@@ -11,9 +11,9 @@ eureka:
     register-with-eureka: false
     fetch-registry: false
     service-url:
-      defaultZone: http://localhost:8761/eureka
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}
   instance:
-    hostname: localhost
+    hostname: ${EUREKA_HOSTNAME:localhost}
   server:
     # Faster eviction for a local demo - real deployments usually leave these at defaults
     # (90s) to tolerate transient network blips between services and the registry.

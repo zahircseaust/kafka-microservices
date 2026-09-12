@@ -1,12 +1,19 @@
 package com.example.inventoryservice.controller;
 
+import com.example.inventoryservice.dto.ApiResponse;
+import com.example.inventoryservice.dto.ProductRequest;
+import com.example.inventoryservice.dto.ProductResponse;
 import com.example.inventoryservice.model.Product;
-import com.example.inventoryservice.repository.ProductRepository;
+import com.example.inventoryservice.service.InventoryService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -14,10 +21,50 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductController {
 
-    private final ProductRepository productRepository;
+    private final InventoryService inventoryService;
 
     @GetMapping
     public List<Product> getAllProducts() {
-        return productRepository.findAll();
+        return inventoryService.getAllProducts();
+    }
+
+    @GetMapping("/{id}")
+    public Product getProductById(@PathVariable Long id) {
+        return inventoryService.getProductById(id);
+    }
+
+    @PostMapping("/create")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<ProductResponse>> createProduct(
+            @Valid @RequestBody ProductRequest request,
+            HttpServletRequest httpRequest) {
+
+        ProductResponse product =
+                inventoryService.createProduct(request);
+
+        ApiResponse<ProductResponse> response =
+                ApiResponse.<ProductResponse>builder()
+                        .success(true)
+                        .message("Product created successfully")
+                        .data(product)
+                        .timestamp(LocalDateTime.now())
+                        .path(httpRequest.getRequestURI())
+                        .build();
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Product> updateProduct(@PathVariable Long id,
+                                                 @Valid @RequestBody ProductRequest request) {
+        return ResponseEntity.ok(inventoryService.updateProduct(id, request));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+        inventoryService.deleteProduct(id);
+        return ResponseEntity.noContent().build();
     }
 }

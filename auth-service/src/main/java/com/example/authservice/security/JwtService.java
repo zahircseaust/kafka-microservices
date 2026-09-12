@@ -19,15 +19,29 @@ public class JwtService {
     @Value("${jwt.expiration-ms:3600000}")
     private long expirationMs;
 
+    @Value("${jwt.refresh-expiration-ms:2592000000}")
+    private long refreshExpirationMs;
+
     private SecretKey signingKey() {
-        // HS256 requires a key of at least 256 bits (32 bytes) - the default in
-        // application.yml is intentionally long enough; override JWT_SECRET in prod.
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
+    // Access Token
     public String generateToken(String username, List<String> roles) {
+
         Date now = new Date();
         Date expiry = new Date(now.getTime() + expirationMs);
+
+        return Jwts.builder().subject(username).claim("roles", roles).issuedAt(now).expiration(expiry).signWith(signingKey()).compact();
+    }
+
+    // Refresh Token
+    public String generateRefreshToken(String username, List<String> roles) {
+
+        Date now = new Date();
+        Date expiry = new Date(
+                now.getTime() + refreshExpirationMs
+        );
 
         return Jwts.builder()
                 .subject(username)
@@ -40,5 +54,9 @@ public class JwtService {
 
     public long getExpirationMs() {
         return expirationMs;
+    }
+
+    public long getRefreshExpirationMs() {
+        return refreshExpirationMs;
     }
 }

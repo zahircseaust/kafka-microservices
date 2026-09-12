@@ -1,0 +1,66 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: inventory-service
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/inventorydb
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:123456}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    defer-datasource-initialization: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  sql:
+    init:
+      mode: always
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+        retries: 5
+    consumer:
+      group-id: inventory-service-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      auto-offset-reset: earliest
+      properties:
+        spring.json.use.type.headers: false
+        spring.json.value.default.type: com.example.inventoryservice.dto.OrderCreatedEvent
+        spring.json.trusted.packages: "*"
+
+app:
+  kafka:
+    topic:
+      order-events: order-events
+      inventory-events: inventory-events
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}
+  instance:
+    prefer-ip-address: true
+
+logging:
+  level:
+    com.example.inventoryservice: INFO
+    org.apache.kafka: WARN
+jwt:
+  secret: ${JWT_SECRET:change-this-super-secret-key-that-is-at-least-32-bytes-long!}
+  expiration-ms: ${JWT_EXPIRATION_MS:3600000}

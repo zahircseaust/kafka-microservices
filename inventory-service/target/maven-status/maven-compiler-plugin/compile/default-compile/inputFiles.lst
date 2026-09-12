@@ -1,0 +1,17 @@
+C:\Java-Project\kafka-microservices\inventory-service\src\main\java\com\example\inventoryservice\dto\OrderCreatedEvent.java
+C:\Java-Project\kafka-microservices\inventory-service\src\main\java\com\example\inventoryservice\config\KafkaTopicConfig.java
+C:\Java-Project\kafka-microservices\inventory-service\src\main\java\com\example\inventoryservice\repository\ProductRepository.java
+C:\Java-Project\kafka-microservices\inventory-service\src\main\java\com\example\inventoryservice\dto\ProductRequest.java
+C:\Java-Project\kafka-microservices\inventory-service\src\main\java\com\example\inventoryservice\service\InventoryService.java
+C:\Java-Project\kafka-microservices\inventory-service\src\main\java\com\example\inventoryservice\exception\GlobalExceptionHandler.java
+C:\Java-Project\kafka-microservices\inventory-service\src\main\java\com\example\inventoryservice\model\Product.java
+C:\Java-Project\kafka-microservices\inventory-service\src\main\java\com\example\inventoryservice\dto\ApiResponse.java
+C:\Java-Project\kafka-microservices\inventory-service\src\main\java\com\example\inventoryservice\kafka\InventoryEventProducer.java
+C:\Java-Project\kafka-microservices\inventory-service\src\main\java\com\example\inventoryservice\dto\ProductResponse.java
+C:\Java-Project\kafka-microservices\inventory-service\src\main\java\com\example\inventoryservice\util\Util.java
+C:\Java-Project\kafka-microservices\inventory-service\src\main\java\com\example\inventoryservice\exception\ProductNotFoundException.java
+C:\Java-Project\kafka-microservices\inventory-service\src\main\java\com\example\inventoryservice\InventoryServiceApplication.java
+C:\Java-Project\kafka-microservices\inventory-service\src\main\java\com\example\inventoryservice\controller\ProductController.java
+C:\Java-Project\kafka-microservices\inventory-service\src\main\java\com\example\inventoryservice\kafka\OrderEventConsumer.java
+C:\Java-Project\kafka-microservices\inventory-service\src\main\java\com\example\inventoryservice\dto\InventoryEvent.java
+C:\Java-Project\kafka-microservices\inventory-service\src\main\java\com\example\inventoryservice\security\SecurityConfig.java

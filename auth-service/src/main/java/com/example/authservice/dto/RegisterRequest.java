@@ -1,9 +1,10 @@
 package com.example.authservice.dto;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.Data;
+
+import java.util.Set;
+import java.util.UUID;
 
 @Data
 public class RegisterRequest {
@@ -19,4 +20,10 @@ public class RegisterRequest {
     @NotBlank(message = "password is required")
     @Size(min = 8, message = "password must be at least 8 characters")
     private String password;
+
+    @NotEmpty(message = "at least one role is required")
+    private Set<String> roles;
+
+    @NotNull(message = "tenantId is required")
+    private UUID tenantId;
 }

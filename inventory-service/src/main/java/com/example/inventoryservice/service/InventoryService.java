@@ -76,8 +76,19 @@ public class InventoryService {
     // CRUD operations (REST API - ProductController)
     // =========================================================
 
-    public List<Product> getAllProducts() {
-        return productRepository.findAll();
+
+    public List<ProductResponse> getAllProducts() {
+        return productRepository.findAll()
+                .stream()
+                .map(product -> ProductResponse.builder()
+                        .id(product.getId())
+                        .name(product.getName())
+                        .stockQuantity(product.getStockQuantity())
+                        .version(product.getVersion())
+                        .createdAt(product.getCreatedAt())
+                        .updatedAt(product.getUpdatedAt())
+                        .build())
+                .toList();
     }
 
     public Product getProductById(Long id) {

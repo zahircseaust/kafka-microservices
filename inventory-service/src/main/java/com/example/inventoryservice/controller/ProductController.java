@@ -24,8 +24,22 @@ public class ProductController {
     private final InventoryService inventoryService;
 
     @GetMapping
-    public List<Product> getAllProducts() {
-        return inventoryService.getAllProducts();
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<ProductResponse>>> getAllProducts(
+            HttpServletRequest httpRequest) {
+
+        List<ProductResponse> products = inventoryService.getAllProducts();
+
+        ApiResponse<List<ProductResponse>> response =
+                ApiResponse.<List<ProductResponse>>builder()
+                        .success(true)
+                        .message("Products retrieved successfully")
+                        .data(products)
+                        .timestamp(LocalDateTime.now())
+                        .path(httpRequest.getRequestURI())
+                        .build();
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
